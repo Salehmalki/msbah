@@ -1,25 +1,730 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="استغفر" />
-    <meta name="theme-color" content="#04100c" />
-    <title>مسبحة الاستغفار الذكية</title>
-    <meta name="description" content="تطبيق استغفار إسلامي تفاعلي متطور لمتابعة الأوراد اليومية وحساب الجولات وإحصائيات الذكر." />
-    <meta property="og:title" content="مسبحة الاستغفار الذكية" />
-    <meta property="og:description" content="تطبيق استغفار إسلامي تفاعلي متطور لمتابعة الأوراد اليومية وحساب الجولات وإحصائيات الذكر." />
-    <meta property="og:type" content="website" />
-    <meta name="twitter:card" content="summary_large_image" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Aref+Ruqaa:wght@400;700&family=Amiri+Quran&family=Readex+Pro:wght@300;400;600&display=swap" rel="stylesheet">
-  </head>
-  <body class="bg-slate-950 text-slate-100 antialiased selection:bg-emerald-600/30 selection:text-emerald-300 font-sans min-h-screen">
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
-</html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="استغفر">
+  <meta name="theme-color" content="#04100c">
+  <title>مسبحة الاستغفار الذكية</title>
+  <meta name="description" content="تطبيق استغفار إسلامي تفاعلي متطور لمتابعة الأوراد اليومية وحساب الجولات وإحصائيات الذكر.">
+  <meta property="og:title" content="مسبحة الاستغفار الذكية">
+  <meta property="og:description" content="تطبيق استغفار إسلامي تفاعلي متطور لمتابعة الأوراد اليومية وحساب الجولات وإحصائيات الذكر.">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Aref+Ruqaa:wght@400;700&family=Amiri+Quran&family=Readex+Pro:wght@300;400;600&display=swap" rel="stylesheet">
+  <style>
+  :root {
+    --sky-1: #04100c;
+    --sky-2: #082119;
+    --sky-3: #0e3529;
+    --amber: #34d399; /* Emerald Green */
+    --rose: #059669;  /* Deep Jade Green */
+    --ink: #031c13;
+    --text: #f0fdf4;
+    --muted: #a7f3d0;
+    --line: rgba(240, 253, 244, 0.18);
+    --panel: rgba(4, 20, 15, 0.65);
+    --track: rgba(240, 253, 244, 0.14);
+    --bead: rgba(240, 253, 244, 0.22);
+    --moon: #f0fdf4;
+    --star: #ecfdf5;
+    --amber-glow: rgba(52, 211, 153, 0.55);
+    --f-display: 'Aref Ruqaa', 'Amiri', 'Traditional Arabic', serif;
+    --f-quran: 'Amiri Quran', 'Amiri', 'Traditional Arabic', serif;
+    --f-ui: 'Readex Pro', 'Segoe UI', Tahoma, sans-serif;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    min-height: 100%;
+    min-height: 100dvh;
+    margin: 0;
+    padding: 0;
+  }
+  body {
+    background: var(--sky-1);
+    color: var(--text);
+    font-family: var(--f-ui);
+    font-size: 14px;
+    padding-top: max(8px, env(safe-area-inset-top, 0px));
+    padding-bottom: max(12px, env(safe-area-inset-bottom, 0px));
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    overflow-x: hidden;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    touch-action: manipulation;
+  }
+  button {
+    font-family: inherit;
+    touch-action: manipulation;
+  }
+  button:focus-visible, textarea:focus-visible {
+    outline: 2px solid var(--amber);
+    outline-offset: 3px;
+  }
 
+  #app {
+    position: relative;
+    min-height: 100%;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 6px;
+    max-width: 440px;
+    margin-inline: auto;
+  }
+  #app > *:not(.sky):not(#fx) { position: relative; z-index: 2; }
+
+  /* sky */
+  .sky {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+    background: linear-gradient(180deg, var(--sky-1) 0%, var(--sky-2) 55%, var(--sky-3) 100%);
+    pointer-events: none;
+  }
+  .sky::before {
+    content: "";
+    position: absolute;
+    left: -30%;
+    right: -30%;
+    bottom: -25%;
+    height: 75%;
+    background: radial-gradient(ellipse at 50% 100%, var(--amber) 0%, var(--rose) 30%, transparent 68%);
+    opacity: calc(0.16 + var(--p, 0) * 0.5);
+    transform: translateY(calc((1 - var(--p, 0)) * 30%));
+    transition: opacity 0.8s ease, transform 0.8s ease;
+  }
+  .sky::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 50% 45%, var(--amber-glow), transparent 60%);
+    opacity: 0;
+  }
+  .sky.flash::after { animation: flash 1.3s ease-out; }
+  @keyframes flash { 0% { opacity: 0; } 25% { opacity: 1; } 100% { opacity: 0; } }
+  #fx { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; }
+
+  /* header */
+  .top { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 44px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-family: var(--f-display); font-size: 30px; font-weight: 700; line-height: 1; }
+  .moon {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    box-shadow: -6px 5px 0 0 var(--moon);
+    opacity: calc(1 - var(--p, 0) * 0.85);
+    transition: opacity 0.8s ease;
+    margin-inline-start: 6px;
+  }
+  .date { font-size: 12px; color: var(--muted); text-align: center; flex: 1; min-width: 0; }
+  .ghost {
+    min-height: 36px;
+    padding: 0 12px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: transparent;
+    color: var(--muted);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .ghost.armed { color: var(--ink); background: var(--amber); border-color: transparent; font-weight: 600; }
+
+  /* verse */
+  .verse {
+    min-height: 145px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 6px;
+    text-align: center;
+    padding-top: 2px;
+  }
+  .verse.swap > * { animation: fadein 0.45s ease both; }
+  @keyframes fadein { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  .line { margin: 0; font-size: 14px; color: var(--amber); }
+  .line.gold { font-size: 16px; font-weight: 600; color: var(--text); text-shadow: 0 0 18px var(--amber-glow); }
+  .ayah { margin: 0; font-family: var(--f-quran); font-size: clamp(17px, 5.2vw, 23px); line-height: 1.9; text-wrap: balance; }
+  .refrow { display: flex; align-items: center; gap: 10px; }
+  .ref { font-size: 12px; color: var(--muted); }
+  .next {
+    min-height: 30px;
+    padding: 0 12px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: transparent;
+    color: var(--muted);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    touch-action: manipulation;
+  }
+  .next:hover { color: var(--amber); border-color: var(--amber); }
+
+  /* stage */
+  .stage { flex: 1; display: grid; place-items: center; min-height: 250px; padding-block: 4px; --d: min(72vw, 280px); }
+  @media (max-height: 750px) {
+    .verse { min-height: 125px; gap: 4px; }
+    .ayah { font-size: clamp(16px, 4.8vw, 20px); line-height: 1.75; }
+    .stage { --d: min(64vw, 240px); min-height: 220px; }
+  }
+  @media (max-height: 670px) {
+    .verse { min-height: 100px; gap: 3px; }
+    .ayah { font-size: 15px; line-height: 1.6; }
+    .line { font-size: 13px; }
+    .stage { --d: min(56vw, 205px); min-height: 195px; }
+    .dock { padding: 10px; gap: 8px; border-radius: 18px; }
+    .chip { min-height: 36px; padding: 0 10px; font-size: 13px; }
+    .stat b { font-size: 18px; }
+    .share { min-height: 42px; font-size: 14px; border-radius: 12px; }
+  }
+
+  .ringwrap { position: relative; width: var(--d); height: var(--d); }
+  .ringwrap svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+  .track { fill: none; stroke: var(--track); stroke-width: 3; }
+  .arc { fill: none; stroke: url(#g); stroke-width: 5; stroke-linecap: round; transition: stroke-dashoffset 0.35s cubic-bezier(0.2, 0.8, 0.2, 1); filter: drop-shadow(0 0 5px var(--amber-glow)); }
+  .bead { fill: var(--bead); transition: fill 0.25s ease, r 0.25s ease; }
+  .bead.on { fill: var(--amber); filter: drop-shadow(0 0 4px var(--amber-glow)); }
+  .bead.last { r: 4.8px; }
+
+  .tap {
+    position: absolute;
+    inset: 11%;
+    border-radius: 50%;
+    border: 1px solid var(--line);
+    background: radial-gradient(circle at 50% 30%, rgba(240, 253, 244, 0.14), var(--panel) 72%);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+    color: var(--text);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    cursor: pointer;
+    touch-action: manipulation;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    transition: transform 0.12s ease;
+  }
+  .tap::after {
+    content: "";
+    position: absolute;
+    inset: -6px;
+    border-radius: 50%;
+    box-shadow: 0 0 46px var(--amber-glow);
+    opacity: 0.15;
+    animation: breathe 4.5s ease-in-out infinite;
+    pointer-events: none;
+  }
+  @keyframes breathe { 50% { opacity: 0.5; } }
+  .tap.press { transform: scale(0.965); }
+  .phrase { font-family: var(--f-display); font-size: clamp(24px, 7.4vw, 32px); color: var(--amber); line-height: 1.3; }
+  .count { font-size: clamp(54px, 17vw, 78px); font-weight: 600; line-height: 1.05; font-variant-numeric: tabular-nums; }
+  .count.bump { animation: bump 0.22s ease-out; }
+  @keyframes bump { 40% { transform: scale(1.12); } }
+  .of { font-size: 13px; color: var(--muted); }
+  .rl { position: absolute; inset: 11%; border-radius: 50%; overflow: hidden; pointer-events: none; }
+  .ripple { position: absolute; width: 20px; height: 20px; margin: -10px 0 0 -10px; border-radius: 50%; border: 2px solid var(--amber); animation: rip 0.7s ease-out forwards; }
+  @keyframes rip { from { transform: scale(0); opacity: 0.85; } to { transform: scale(11); opacity: 0; } }
+  .float { position: absolute; left: 50%; top: 30%; font-family: var(--f-display); font-size: 22px; color: var(--amber); white-space: nowrap; pointer-events: none; animation: rise 1.7s ease-out forwards; text-shadow: 0 0 12px var(--amber-glow); }
+  @keyframes rise {
+    0% { opacity: 0; transform: translate(var(--dx, 0px), 10px) scale(0.9); }
+    20% { opacity: 0.95; }
+    100% { opacity: 0; transform: translate(var(--dx, 0px), -130px) scale(1.1); }
+  }
+
+  /* dock */
+  .dock {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 22px;
+    padding: 14px;
+    display: grid;
+    gap: 12px;
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    margin-bottom: 4px;
+  }
+  .chips { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
+  .chip {
+    min-height: 40px;
+    min-width: 56px;
+    padding: 0 14px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: transparent;
+    color: var(--muted);
+    font-size: 14px;
+    cursor: pointer;
+    font-variant-numeric: tabular-nums;
+    transition: all 0.2s ease;
+  }
+  .chip[aria-pressed="true"] { background: var(--amber); color: var(--ink); border-color: transparent; font-weight: 600; }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); }
+  .stat { text-align: center; min-width: 0; }
+  .stat + .stat { border-inline-start: 1px solid var(--line); }
+  .stat b { display: block; font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--text); }
+  .stat span { font-size: 12px; color: var(--muted); }
+  .share {
+    min-height: 48px;
+    border: 0;
+    border-radius: 14px;
+    background: linear-gradient(90deg, var(--rose), var(--amber));
+    color: var(--ink);
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s ease, transform 0.1s ease;
+  }
+  .share:active { transform: scale(0.98); }
+  .sharebox {
+    width: 100%;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    background: transparent;
+    color: var(--text);
+    font-family: var(--f-ui);
+    font-size: 13px;
+    padding: 10px;
+    resize: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+  }
+  </style>
+</head>
+<body>
+
+<div id="app" dir="rtl" lang="ar">
+  <div class="sky" id="sky" aria-hidden="true"></div>
+  <canvas id="fx" aria-hidden="true"></canvas>
+
+  <header class="top">
+    <div class="brand"><span>استغفر</span><span class="moon" aria-hidden="true"></span></div>
+    <div class="date" id="date"></div>
+    <button class="ghost" id="reset" type="button">تصفير</button>
+  </header>
+
+  <section class="verse" id="verse" aria-live="polite">
+    <p class="line" id="line"></p>
+    <blockquote class="ayah" id="ayah"></blockquote>
+    <div class="refrow">
+      <span class="ref" id="ref"></span>
+      <button class="next" id="next" type="button">الآية التالية</button>
+    </div>
+  </section>
+
+  <main class="stage" id="stage">
+    <div class="ringwrap">
+      <svg viewBox="0 0 280 280" aria-hidden="true">
+        <defs>
+          <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" style="stop-color:var(--rose)"></stop>
+            <stop offset="1" style="stop-color:var(--amber)"></stop>
+          </linearGradient>
+        </defs>
+        <circle class="track" cx="140" cy="140" r="116"></circle>
+        <circle class="arc" id="arc" cx="140" cy="140" r="116" transform="rotate(-90 140 140)"></circle>
+        <g id="beads"></g>
+      </svg>
+      <button class="tap" id="tap" type="button" aria-label="أستغفر الله">
+        <span class="phrase">أستغفر الله</span>
+        <span class="count" id="count">٠</span>
+        <span class="of" id="of"></span>
+      </button>
+      <span class="rl" id="rl"></span>
+    </div>
+  </main>
+
+  <section class="dock">
+    <div class="chips" id="chips" role="group" aria-label="هدف الجولة">
+      <button class="chip" type="button" data-t="33">٣٣</button>
+      <button class="chip" type="button" data-t="100">١٠٠</button>
+      <button class="chip" type="button" data-t="500">٥٠٠</button>
+      <button class="chip" type="button" data-t="1000">١٠٠٠</button>
+    </div>
+    <div class="stats">
+      <div class="stat"><b id="stToday">٠</b><span>استغفار اليوم</span></div>
+      <div class="stat"><b id="stRounds">٠</b><span>جولات مكتملة</span></div>
+      <div class="stat"><b id="stTotal">٠</b><span>إجمالي الاستغفار</span></div>
+    </div>
+    <button class="share" id="share" type="button">نسخ نص المشاركة</button>
+    <textarea class="sharebox" id="sharebox" rows="4" readonly hidden aria-label="نص المشاركة"></textarea>
+  </section>
+</div>
+
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var AR = '٠١٢٣٤٥٦٧٨٩';
+  function fa(n) {
+    return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '٬').replace(/\d/g, function (d) { return AR[d]; });
+  }
+  var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  var STAGES = [
+    { line: 'ابدأ باسم الله، وأحضِر قلبك', ayah: 'فَقُلْتُ اسْتَغْفِرُوا رَبَّكُمْ إِنَّهُ كَانَ غَفَّارًا يُرْسِلِ السَّمَاءَ عَلَيْكُمْ مِدْرَارًا', ref: 'نوح · ١٠–١١' },
+    { line: 'استغفر، ثم عُد إليه', ayah: 'وَأَنِ اسْتَغْفِرُوا رَبَّكُمْ ثُمَّ تُوبُوا إِلَيْهِ يُمَتِّعْكُم مَّتَاعًا حَسَنًا إِلَىٰ أَجَلٍ مُّسَمًّى وَيُؤْتِ ذَا كُلِّ فَضْلٍ فَضْلَهُ', ref: 'هود · ٣' },
+    { line: 'مهما كان الذنب، باب الرجوع مفتوح', ayah: 'وَمَن يَعْمَلْ سُوءًا أَوْ يَظْلِمْ نَفْسَهُ ثُمَّ يَسْتَغْفِرِ اللَّهَ يَجِدِ اللَّهَ غَفُورًا رَّحِيمًا', ref: 'النساء · ١١٠' },
+    { line: 'الاستغفار أمانٌ لمن يلجأ إليه', ayah: 'وَمَا كَانَ اللَّهُ لِيُعَذِّبَهُمْ وَأَنتَ فِيهِمْ وَمَا كَانَ اللَّهُ مُعَذِّبَهُمْ وَهُمْ يَسْتَغْفِرُونَ', ref: 'الأنفال · ٣٣' },
+    { line: 'ذكرٌ، ثم استغفار، ثم إقلاع', ayah: 'ذَكَرُوا اللَّهَ فَاسْتَغْفَرُوا لِذُنُوبِهِمْ وَمَن يَغْفِرُ الذُّنُوبَ إِلَّا اللَّهُ', ref: 'آل عمران · ١٣٥' },
+    { line: 'هنيئًا لمن كان له وِردٌ في السحر', ayah: 'وَبِالْأَسْحَارِ هُمْ يَسْتَغْفِرُونَ', ref: 'الذاريات · ١٨' },
+    { line: 'أُمر به نبيّك ﷺ، فواصل', ayah: 'فَاعْلَمْ أَنَّهُ لَا إِلَهَ إِلَّا اللَّهُ وَاسْتَغْفِرْ لِذَنْبِكَ وَلِلْمُؤْمِنِينَ وَالْمُؤْمِنَاتِ', ref: 'محمد · ١٩' },
+    { line: 'اختم يومك بالتسبيح والاستغفار', ayah: 'فَسَبِّحْ بِحَمْدِ رَبِّكَ وَاسْتَغْفِرْهُ إِنَّهُ كَانَ تَوَّابًا', ref: 'النصر · ٣' },
+    { line: 'أحسِن الظنّ بربّك', ayah: 'وَاسْتَغْفِرُوا اللَّهَ إِنَّ اللَّهَ غَفُورٌ رَّحِيمٌ', ref: 'البقرة · ١٩٩' },
+    { line: 'قل كما قال موسى عليه السلام', ayah: 'قَالَ رَبِّ إِنِّي ظَلَمْتُ نَفْسِي فَاغْفِرْ لِي فَغَفَرَ لَهُ إِنَّهُ هُوَ الْغَفُورُ الرَّحِيمُ', ref: 'القصص · ١٦' },
+    { line: 'دعاءُ أبينا آدم، وهو دعاؤنا', ayah: 'قَالَا رَبَّنَا ظَلَمْنَا أَنفُسَنَا وَإِن لَّمْ تَغْفِرْ لَنَا وَتَرْحَمْنَا لَنَكُونَنَّ مِنَ الْخَاسِرِينَ', ref: 'الأعراف · ٢٣' },
+    { line: 'ولا تنسَ والديك من دعائك', ayah: 'رَّبِّ اغْفِرْ لِي وَلِوَالِدَيَّ وَلِمَن دَخَلَ بَيْتِيَ مُؤْمِنًا وَلِلْمُؤْمِنِينَ وَالْمُؤْمِنَاتِ', ref: 'نوح · ٢٨' }
+  ];
+  var TARGETS = [33, 100, 500, 1000];
+  var KEY = 'istighfar-counter-v1';
+
+  function dayKey() {
+    var d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+  var S = { target: 33, count: 0, rounds: 0, total: 0, day: dayKey(), today: 0 };
+  try {
+    var raw = JSON.parse(localStorage.getItem(KEY) || 'null');
+    if (raw && typeof raw === 'object') {
+      ['target', 'count', 'rounds', 'total', 'today'].forEach(function (k) { if (typeof raw[k] === 'number' && raw[k] >= 0) S[k] = Math.floor(raw[k]); });
+      if (typeof raw.day === 'string') S.day = raw.day;
+    }
+  } catch (e) {}
+  if (TARGETS.indexOf(S.target) < 0) S.target = 33;
+  if (S.count >= S.target) S.count = 0;
+  if (S.day !== dayKey()) { S.day = dayKey(); S.today = 0; }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
+
+  var app = $('app'), sky = $('sky'), arc = $('arc'), beadsG = $('beads');
+  var btn = $('tap'), countEl = $('count'), ofEl = $('of'), rl = $('rl'), stage = $('stage');
+  var verse = $('verse'), lineEl = $('line'), ayahEl = $('ayah'), refEl = $('ref');
+  var chips = Array.prototype.slice.call(document.querySelectorAll('.chip'));
+
+  // Web Audio click generator
+  var audioCtx = null;
+  function playClick() {
+    try {
+      if (!audioCtx) {
+        var AC = window.AudioContext || window.webkitAudioContext;
+        if (AC) audioCtx = new AC();
+      }
+      if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+      if (!audioCtx) return;
+      var now = audioCtx.currentTime;
+      var osc = audioCtx.createOscillator();
+      var gain = audioCtx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(320, now);
+      osc.frequency.exponentialRampToValueAtTime(70, now + 0.045);
+      gain.gain.setValueAtTime(0.5, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.045);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(now);
+      osc.stop(now + 0.05);
+    } catch(e) {}
+  }
+
+  var R = 116, C = 2 * Math.PI * R;
+  arc.style.strokeDasharray = C;
+  var NS = 'http://www.w3.org/2000/svg';
+  var beads = [];
+  for (var i = 0; i < 33; i++) {
+    var a = (i / 33) * Math.PI * 2 - Math.PI / 2;
+    var c = document.createElementNS(NS, 'circle');
+    c.setAttribute('cx', (140 + 132 * Math.cos(a)).toFixed(2));
+    c.setAttribute('cy', (140 + 132 * Math.sin(a)).toFixed(2));
+    c.setAttribute('r', '3.2');
+    c.setAttribute('class', 'bead');
+    beadsG.appendChild(c);
+    beads.push(c);
+  }
+
+  try {
+    $('date').textContent = new Intl.DateTimeFormat('ar-SA-u-ca-islamic-umalqura', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date());
+  } catch (e) {
+    try { $('date').textContent = new Intl.DateTimeFormat('ar', { dateStyle: 'long' }).format(new Date()); } catch (e2) {}
+  }
+
+  var taps = 0, offset = 0, shownKey = '', celebrating = false, celT = 0, hold = false, holdT = 0, curP = 0;
+
+  function stageIndex() { return (Math.floor(taps / 11) + offset) % STAGES.length; }
+
+  function showStage(force) {
+    if (celebrating) return;
+    var i = stageIndex();
+    var idle = taps === 0 && S.count === 0 && offset === 0;
+    var key = i + (idle ? 'i' : '');
+    if (!force && key === shownKey) return;
+    shownKey = key;
+    var st = STAGES[i];
+    lineEl.textContent = idle ? 'المس الدائرة وابدأ باسم الله' : st.line;
+    lineEl.classList.remove('gold');
+    ayahEl.textContent = '﴿' + st.ayah + '﴾';
+    refEl.textContent = st.ref;
+    verse.classList.remove('swap');
+    void verse.offsetWidth;
+    verse.classList.add('swap');
+  }
+
+  function render() {
+    var shown = hold ? S.target : S.count;
+    var p = shown / S.target;
+    curP = p;
+    app.style.setProperty('--p', p.toFixed(3));
+    arc.style.strokeDashoffset = C * (1 - p);
+    var lit = Math.floor(p * 33 + 1e-6);
+    for (var k = 0; k < beads.length; k++) {
+      beads[k].classList.toggle('on', k < lit);
+      beads[k].classList.toggle('last', k === lit - 1);
+    }
+    countEl.textContent = fa(shown);
+    ofEl.textContent = 'من ' + fa(S.target);
+    btn.setAttribute('aria-label', 'أستغفر الله، العدد ' + fa(shown) + ' من ' + fa(S.target));
+    $('stToday').textContent = fa(S.today);
+    $('stRounds').textContent = fa(S.rounds);
+    $('stTotal').textContent = fa(S.total);
+    chips.forEach(function (ch) { ch.setAttribute('aria-pressed', String(+ch.dataset.t === S.target)); });
+  }
+
+  /* ---------- effects ---------- */
+  var cv = $('fx'), ctx = cv.getContext('2d');
+  var W = 0, H = 0, dpr = 1;
+  var stars = [], parts = [];
+  var COL = ['#34d399', '#10b981', '#6ee7b7', '#059669', '#a7f3d0'];
+  var STAR = '#ecfdf5';
+
+  function resize() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth; H = window.innerHeight;
+    cv.width = Math.floor(W * dpr); cv.height = Math.floor(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    if (!stars.length) {
+      for (var i = 0; i < 80; i++) stars.push({ x: Math.random(), y: Math.random() * 0.72, r: 0.5 + Math.random() * 1.3, sp: 0.6 + Math.random() * 1.6, ph: Math.random() * 6.28 });
+    }
+    if (reduce) draw(0);
+  }
+
+  function draw(t) {
+    ctx.clearRect(0, 0, W, H);
+    ctx.globalCompositeOperation = 'source-over';
+    var fade = 1 - 0.75 * curP;
+    ctx.fillStyle = STAR;
+    for (var i = 0; i < stars.length; i++) {
+      var s = stars[i];
+      var al = reduce ? 0.55 : 0.25 + 0.6 * (0.5 + 0.5 * Math.sin(t * s.sp + s.ph));
+      ctx.globalAlpha = al * fade;
+      ctx.beginPath();
+      ctx.arc(s.x * W, s.y * H, s.r, 0, 6.2832);
+      ctx.fill();
+    }
+    ctx.globalCompositeOperation = 'lighter';
+    for (var j = parts.length - 1; j >= 0; j--) {
+      var q = parts[j];
+      q.l++;
+      if (q.l > q.m) { parts.splice(j, 1); continue; }
+      q.x += q.vx; q.y += q.vy;
+      q.vx *= 0.97; q.vy = q.vy * 0.97 - 0.02;
+      ctx.globalAlpha = Math.max(0, 1 - q.l / q.m) * 0.9;
+      ctx.fillStyle = q.c;
+      ctx.beginPath();
+      ctx.arc(q.x, q.y, q.r, 0, 6.2832);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = 'source-over';
+  }
+
+  var running = false;
+  function loop(ms) {
+    if (document.visibilityState !== 'visible') { running = false; return; }
+    draw(ms / 1000);
+    requestAnimationFrame(loop);
+  }
+  function start() { if (reduce || running) return; running = true; requestAnimationFrame(loop); }
+  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') start(); });
+  window.addEventListener('resize', resize);
+
+  function burst(x, y, n, spd) {
+    if (reduce) return;
+    for (var i = 0; i < n; i++) {
+      var a = Math.random() * 6.2832, v = (0.5 + Math.random()) * spd;
+      parts.push({ x: x, y: y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - spd * 0.5, l: 0, m: 38 + Math.random() * 40, r: 1.2 + Math.random() * 2.4, c: COL[(Math.random() * COL.length) | 0] });
+    }
+    if (parts.length > 320) parts.splice(0, parts.length - 320);
+  }
+
+  var lastFloat = 0;
+  function fx(x, y) {
+    if (reduce) return;
+    var b = rl.getBoundingClientRect();
+    var rp = document.createElement('span');
+    rp.className = 'ripple';
+    rp.style.left = (x - b.left) + 'px';
+    rp.style.top = (y - b.top) + 'px';
+    rp.addEventListener('animationend', function () { rp.remove(); });
+    rl.appendChild(rp);
+    burst(x, y, 7, 2.2);
+    var now = Date.now();
+    if (now - lastFloat > 260 && stage.querySelectorAll('.float').length < 8) {
+      lastFloat = now;
+      var f = document.createElement('span');
+      f.className = 'float';
+      f.textContent = 'أستغفر الله';
+      f.style.setProperty('--dx', (Math.random() * 120 - 60) + 'px');
+      f.style.transform = 'translateX(-50%)';
+      f.addEventListener('animationend', function () { f.remove(); });
+      stage.appendChild(f);
+    }
+  }
+
+  function celebrate() {
+    celebrating = true;
+    clearTimeout(celT);
+    lineEl.textContent = 'تقبّل الله منك. أتممتَ ' + fa(S.target) + ' استغفارة';
+    lineEl.classList.add('gold');
+    verse.classList.remove('swap'); void verse.offsetWidth; verse.classList.add('swap');
+    sky.classList.remove('flash'); void sky.offsetWidth; sky.classList.add('flash');
+    var b = btn.getBoundingClientRect();
+    burst(b.left + b.width / 2, b.top + b.height / 2, 90, 4.2);
+    try { if (navigator.vibrate) navigator.vibrate([30, 40, 60]); } catch (e) {}
+    celT = setTimeout(function () { celebrating = false; showStage(true); }, 4200);
+  }
+
+  /* ---------- counting ---------- */
+  function tap(px, py) {
+    playClick();
+    S.count++; S.today++; S.total++; taps++;
+    var done = false;
+    if (S.count >= S.target) { S.rounds++; S.count = 0; done = true; }
+    save();
+    if (done) {
+      hold = true;
+      clearTimeout(holdT);
+      holdT = setTimeout(function () { hold = false; render(); }, 650);
+      celebrate();
+    }
+    render();
+    if (!done) showStage();
+    countEl.classList.remove('bump'); void countEl.offsetWidth; countEl.classList.add('bump');
+    fx(px, py);
+    try { if (navigator.vibrate) navigator.vibrate(8); } catch (e) {}
+    lock();
+  }
+
+  btn.addEventListener('pointerdown', function (e) {
+    if (e.button > 0) return;
+    e.preventDefault();
+    btn.classList.add('press');
+    tap(e.clientX, e.clientY);
+  });
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach(function (ev) {
+    btn.addEventListener(ev, function () { btn.classList.remove('press'); });
+  });
+  btn.addEventListener('click', function (e) {
+    if (e.detail === 0) {
+      var r = btn.getBoundingClientRect();
+      tap(r.left + r.width / 2, r.top + r.height / 2);
+    }
+  });
+  btn.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+
+  $('next').addEventListener('click', function () { offset++; showStage(true); });
+
+  chips.forEach(function (ch) {
+    ch.addEventListener('click', function () {
+      S.target = +ch.dataset.t;
+      if (S.count >= S.target) S.count = 0;
+      save(); render();
+    });
+  });
+
+  // Keyboard shortcut (Space or Enter)
+  window.addEventListener('keydown', function (e) {
+    if (e.code === 'Space' || e.code === 'Enter') {
+      if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+      e.preventDefault();
+      var r = btn.getBoundingClientRect();
+      tap(r.left + r.width / 2, r.top + r.height / 2);
+    }
+  });
+
+  var armT = 0;
+  var resetBtn = $('reset');
+  resetBtn.addEventListener('click', function () {
+    if (!resetBtn.classList.contains('armed')) {
+      resetBtn.classList.add('armed');
+      resetBtn.textContent = 'اضغط للتأكيد';
+      armT = setTimeout(function () { resetBtn.classList.remove('armed'); resetBtn.textContent = 'تصفير'; }, 3000);
+      return;
+    }
+    clearTimeout(armT);
+    resetBtn.classList.remove('armed');
+    resetBtn.textContent = 'تصفير';
+    S.count = 0; S.rounds = 0; S.total = 0; S.today = 0; S.day = dayKey();
+    taps = 0; offset = 0; hold = false; celebrating = false;
+    save(); render(); showStage(true);
+  });
+
+  var shareBtn = $('share'), box = $('sharebox'), shareT = 0;
+  function shareText() {
+    var st = STAGES[stageIndex()];
+    var head = S.today > 0 ? 'استغفرتُ الله اليوم ' + fa(S.today) + ' مرّة.' : 'أستغفر الله وأتوب إليه.';
+    return head + '\n\n﴿' + st.ayah + '﴾ ' + st.ref + '\n\nاللهم اغفر لنا ولكم. ذكّر غيرك بالاستغفار.';
+  }
+  function flash(msg) {
+    shareBtn.textContent = msg;
+    clearTimeout(shareT);
+    shareT = setTimeout(function () { shareBtn.textContent = 'نسخ نص المشاركة'; }, 2000);
+  }
+  function fallbackCopy(text) {
+    box.value = text;
+    box.hidden = false;
+    box.select();
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) {}
+    if (ok) { box.hidden = true; flash('تم نسخ الرسالة بنجاح ✓'); }
+    else { flash('حدّد النص وانسخه'); }
+  }
+  shareBtn.addEventListener('click', function () {
+    var text = shareText();
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () { box.hidden = true; flash('تم نسخ الرسالة بنجاح ✓'); }, function () { fallbackCopy(text); });
+    } else { fallbackCopy(text); }
+  });
+
+  var wl = null;
+  function lock() {
+    try {
+      if (wl || !('wakeLock' in navigator) || document.visibilityState !== 'visible') return;
+      navigator.wakeLock.request('screen').then(function (l) {
+        wl = l;
+        l.addEventListener('release', function () { wl = null; });
+      }, function () {});
+    } catch (e) {}
+  }
+  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') lock(); });
+
+  resize();
+  render();
+  showStage(true);
+  start();
+})();
+</script>
+
+</body>
+</html>
