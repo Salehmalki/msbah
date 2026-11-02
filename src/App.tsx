@@ -75,7 +75,7 @@ export default function App() {
   const [celebrating, setCelebrating] = useState(false);
   const [skyFlash, setSkyFlash] = useState(false);
   const [verseSwap, setVerseSwap] = useState(false);
-  const [shareTextMsg, setShareTextMsg] = useState('نسخ نص المشاركة');
+  const [shareTextMsg, setShareTextMsg] = useState('مشاركة التطبيق');
   const [hijriDate, setHijriDate] = useState('');
 
   const appRef = useRef<HTMLDivElement>(null);
@@ -412,40 +412,58 @@ export default function App() {
     setCelebrating(false);
   };
 
-  // Share text
+  // Share text with app URL
+  const APP_URL = 'https://salehmalki.github.io/msbah/';
   const getShareText = () => {
     const head = data.today > 0 ? `استغفرتُ الله اليوم ${fa(data.today)} مرّة.` : 'أستغفر الله وأتوب إليه.';
-    return `${head}\n\n﴿${currentStage.ayah}﴾ ${currentStage.ref}\n\nاللهم اغفر لنا ولكم. ذكّر غيرك بالاستغفار.`;
+    return `${head}\n\n﴿${currentStage.ayah}﴾ ${currentStage.ref}\n\nمسبحة الاستغفار الذكية:\n${APP_URL}\n\nذكّر غيرك بالاستغفار.`;
   };
 
   const handleShare = () => {
     const text = getShareText();
     const flashMsg = (msg: string) => {
       setShareTextMsg(msg);
-      setTimeout(() => setShareTextMsg('نسخ نص المشاركة'), 2000);
+      setTimeout(() => setShareTextMsg('مشاركة التطبيق'), 2000);
     };
 
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(text).then(
-        () => flashMsg('تم نسخ الرسالة بنجاح ✓'),
-        () => {
-          if (shareboxRef.current) {
-            shareboxRef.current.value = text;
-            shareboxRef.current.hidden = false;
-            shareboxRef.current.select();
-            document.execCommand('copy');
-            shareboxRef.current.hidden = true;
-            flashMsg('تم نسخ الرسالة بنجاح ✓');
+    const copyToClipboard = () => {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(
+          () => flashMsg('تم نسخ رابط ورسالة التطبيق ✓'),
+          () => {
+            if (shareboxRef.current) {
+              shareboxRef.current.value = text;
+              shareboxRef.current.hidden = false;
+              shareboxRef.current.select();
+              document.execCommand('copy');
+              shareboxRef.current.hidden = true;
+              flashMsg('تم نسخ رابط ورسالة التطبيق ✓');
+            }
           }
-        }
-      );
-    } else if (shareboxRef.current) {
-      shareboxRef.current.value = text;
-      shareboxRef.current.hidden = false;
-      shareboxRef.current.select();
-      document.execCommand('copy');
-      shareboxRef.current.hidden = true;
-      flashMsg('تم نسخ الرسالة بنجاح ✓');
+        );
+      } else if (shareboxRef.current) {
+        shareboxRef.current.value = text;
+        shareboxRef.current.hidden = false;
+        shareboxRef.current.select();
+        document.execCommand('copy');
+        shareboxRef.current.hidden = true;
+        flashMsg('تم نسخ رابط ورسالة التطبيق ✓');
+      }
+    };
+
+    if (navigator.share) {
+      navigator.share({
+        title: 'مسبحة الاستغفار الذكية',
+        text: text,
+        url: APP_URL,
+      }).then(() => {
+        flashMsg('تمت المشاركة بنجاح ✓');
+      }).catch((err) => {
+        if (err && err.name === 'AbortError') return;
+        copyToClipboard();
+      });
+    } else {
+      copyToClipboard();
     }
   };
 

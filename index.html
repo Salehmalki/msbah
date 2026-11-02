@@ -361,8 +361,8 @@
       <div class="stat"><b id="stRounds">٠</b><span>جولات مكتملة</span></div>
       <div class="stat"><b id="stTotal">٠</b><span>إجمالي الاستغفار</span></div>
     </div>
-    <button class="share" id="share" type="button">نسخ نص المشاركة</button>
-    <textarea class="sharebox" id="sharebox" rows="4" readonly hidden aria-label="نص المشاركة"></textarea>
+    <button class="share" id="share" type="button">مشاركة التطبيق</button>
+    <textarea class="sharebox" id="sharebox" rows="4" readonly hidden aria-label="رابط ورسالة المشاركة"></textarea>
   </section>
 </div>
 
@@ -680,16 +680,17 @@
     save(); render(); showStage(true);
   });
 
+  var APP_URL = 'https://salehmalki.github.io/msbah/';
   var shareBtn = $('share'), box = $('sharebox'), shareT = 0;
   function shareText() {
     var st = STAGES[stageIndex()];
     var head = S.today > 0 ? 'استغفرتُ الله اليوم ' + fa(S.today) + ' مرّة.' : 'أستغفر الله وأتوب إليه.';
-    return head + '\n\n﴿' + st.ayah + '﴾ ' + st.ref + '\n\nاللهم اغفر لنا ولكم. ذكّر غيرك بالاستغفار.';
+    return head + '\n\n﴿' + st.ayah + '﴾ ' + st.ref + '\n\nمسبحة الاستغفار الذكية:\n' + APP_URL + '\n\nذكّر غيرك بالاستغفار.';
   }
   function flash(msg) {
     shareBtn.textContent = msg;
     clearTimeout(shareT);
-    shareT = setTimeout(function () { shareBtn.textContent = 'نسخ نص المشاركة'; }, 2000);
+    shareT = setTimeout(function () { shareBtn.textContent = 'مشاركة التطبيق'; }, 2000);
   }
   function fallbackCopy(text) {
     box.value = text;
@@ -697,14 +698,37 @@
     box.select();
     var ok = false;
     try { ok = document.execCommand('copy'); } catch (e) {}
-    if (ok) { box.hidden = true; flash('تم نسخ الرسالة بنجاح ✓'); }
+    if (ok) { box.hidden = true; flash('تم نسخ رابط ورسالة التطبيق ✓'); }
     else { flash('حدّد النص وانسخه'); }
+  }
+  function copyToClipboard(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () {
+        box.hidden = true;
+        flash('تم نسخ رابط ورسالة التطبيق ✓');
+      }, function () {
+        fallbackCopy(text);
+      });
+    } else {
+      fallbackCopy(text);
+    }
   }
   shareBtn.addEventListener('click', function () {
     var text = shareText();
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(text).then(function () { box.hidden = true; flash('تم نسخ الرسالة بنجاح ✓'); }, function () { fallbackCopy(text); });
-    } else { fallbackCopy(text); }
+    if (navigator.share) {
+      navigator.share({
+        title: 'مسبحة الاستغفار الذكية',
+        text: text,
+        url: APP_URL
+      }).then(function () {
+        flash('تمت المشاركة بنجاح ✓');
+      }).catch(function (e) {
+        if (e && e.name === 'AbortError') return;
+        copyToClipboard(text);
+      });
+    } else {
+      copyToClipboard(text);
+    }
   });
 
   var wl = null;
