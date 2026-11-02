@@ -1,0 +1,8 @@
+{
+  "name": "مسبحة الاستغفار الذكية",
+  "description": "تطبيق استغفار إسلامي تفاعلي متطور لمتابعة الأوراد اليومية وحساب الجولات وإحصائيات الذكر.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
