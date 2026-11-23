@@ -17,6 +17,7 @@ interface StateData {
 
 const TARGETS = [33, 100, 500, 1000];
 const KEY = 'istighfar-counter-v1';
+const MUTE_KEY = 'istighfar-muted';
 const AR = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
 
 function fa(n: number): string {
@@ -90,6 +91,27 @@ export default function App() {
   const { isDark, toggleTheme } = useTheme();
   const pwaInstall = usePWAInstall();
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [isMuted, setIsMuted] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem(MUTE_KEY) === '1';
+    } catch {
+      return false;
+    }
+  });
+  const isMutedRef = useRef(isMuted);
+
+  useEffect(() => {
+    isMutedRef.current = isMuted;
+    try {
+      localStorage.setItem(MUTE_KEY, isMuted ? '1' : '0');
+    } catch {
+      // ignore
+    }
+  }, [isMuted]);
+
+  const toggleMute = useCallback(() => {
+    setIsMuted((prev) => !prev);
+  }, []);
 
   const [taps, setTaps] = useState(0);
   const [offset, setOffset] = useState(0);
@@ -331,7 +353,16 @@ export default function App() {
 
   // Perform tap count
   const handleTap = (px?: number, py?: number) => {
-    playBeadSound('wood', 0.5);
+    try {
+      const sel = window.getSelection();
+      if (sel && sel.rangeCount > 0) sel.removeAllRanges();
+    } catch {
+      // ignore
+    }
+
+    if (!isMutedRef.current) {
+      playBeadSound('wood', 0.5);
+    }
 
     let clientX = px;
     let clientY = py;
@@ -677,6 +708,7 @@ export default function App() {
               setIsPressing(true);
               handleTap(e.clientX, e.clientY);
             }}
+            onMouseDown={(e) => e.preventDefault()}
             onPointerUp={() => setIsPressing(false)}
             onPointerLeave={() => setIsPressing(false)}
             onPointerCancel={() => setIsPressing(false)}
@@ -735,7 +767,7 @@ export default function App() {
           </div>
         </div>
 
-        {/* Install & Share Actions */}
+        {/* Install, Mute & Share Actions */}
         <div className="dock-actions">
           <PWAInstallButton
             isInstallable={pwaInstall.isInstallable}
@@ -744,9 +776,33 @@ export default function App() {
             isAndroid={pwaInstall.isAndroid}
             onInstall={pwaInstall.install}
           />
-          <button onClick={handleShare} className="share" type="button">
-            {shareTextMsg}
-          </button>
+          <div className="share-row">
+            <button onClick={handleShare} className="share" type="button">
+              {shareTextMsg}
+            </button>
+            <button
+              type="button"
+              onClick={toggleMute}
+              className={`mute-btn ${isMuted ? 'is-muted' : ''}`}
+              aria-pressed={isMuted}
+              aria-label={isMuted ? 'تفعيل صوت النقر' : 'كتم صوت النقر'}
+              title={isMuted ? 'تفعيل الصوت' : 'كتم الصوت'}
+            >
+              {isMuted ? (
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                  <line x1="22" y1="9" x2="16" y2="15" />
+                  <line x1="16" y1="9" x2="22" y2="15" />
+                </svg>
+              ) : (
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                  <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+                  <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+                </svg>
+              )}
+            </button>
+          </div>
         </div>
         <textarea
           ref={shareboxRef}
@@ -764,6 +820,8 @@ export default function App() {
         isInstallable={pwaInstall.isInstallable}
         isInstalled={pwaInstall.isInstalled}
         onInstall={pwaInstall.install}
+        isMuted={isMuted}
+        onToggleMute={toggleMute}
       />
 
       <OfflineIndicator />

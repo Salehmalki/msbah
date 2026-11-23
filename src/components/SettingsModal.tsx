@@ -6,6 +6,8 @@ interface SettingsModalProps {
   isInstallable: boolean;
   isInstalled: boolean;
   onInstall: () => Promise<boolean>;
+  isMuted: boolean;
+  onToggleMute: () => void;
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({
@@ -14,6 +16,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   isInstallable,
   isInstalled,
   onInstall,
+  isMuted,
+  onToggleMute,
 }) => {
   useEffect(() => {
     if (!isOpen) return;
@@ -55,6 +59,41 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         </div>
 
         <div className="settings-modal-body">
+          {/* قسم الصوت */}
+          <section className="settings-section" aria-labelledby="sound-section-title">
+            <h3 id="sound-section-title" className="settings-section-title">
+              التفضيلات
+            </h3>
+            <button
+              type="button"
+              className="settings-toggle-row"
+              onClick={onToggleMute}
+              aria-pressed={!isMuted}
+            >
+              <span className="settings-toggle-label">
+                {isMuted ? (
+                  <svg className="settings-toggle-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                    <line x1="22" y1="9" x2="16" y2="15" />
+                    <line x1="16" y1="9" x2="22" y2="15" />
+                  </svg>
+                ) : (
+                  <svg className="settings-toggle-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                    <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+                    <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+                  </svg>
+                )}
+                <span>صوت النقر عند التسبيح</span>
+              </span>
+              <span className={`settings-toggle-state ${isMuted ? 'is-muted' : ''}`}>
+                {isMuted ? 'مكتوم' : 'مفعّل'}
+              </span>
+            </button>
+          </section>
+
+          <hr className="settings-divider" />
+
           {/* قسم تثبيت التطبيق */}
           <section className="settings-section" aria-labelledby="install-section-title">
             <h3 id="install-section-title" className="settings-section-title">
