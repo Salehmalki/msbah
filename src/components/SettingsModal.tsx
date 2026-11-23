@@ -1,308 +1,150 @@
-import React from 'react';
-import { UserSettings, SoundType, ThemeMode } from '../types';
-import { playBeadSound, triggerHaptic } from '../utils/audio';
-import { X, Volume2, Smartphone, Hash, Target, Zap, Palette, Trash2 } from 'lucide-react';
+import React, { useEffect } from 'react';
 
 interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  settings: UserSettings;
-  setSettings: React.Dispatch<React.SetStateAction<UserSettings>>;
-  onResetToday: () => void;
+  isInstallable: boolean;
+  isInstalled: boolean;
+  onInstall: () => Promise<boolean>;
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({
   isOpen,
   onClose,
-  settings,
-  setSettings,
-  onResetToday,
+  isInstallable,
+  isInstalled,
+  onInstall,
 }) => {
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
-  const testSound = (type: SoundType) => {
-    playBeadSound(type, settings.soundVolume);
-    if (settings.vibration) triggerHaptic(20);
-  };
-
-  const soundOptions: { label: string; value: SoundType }[] = [
-    { label: 'حبة خشبية (مسبحة)', value: 'wood' },
-    { label: 'نغمة هادئة', value: 'chime' },
-    { label: 'قطرة ماء', value: 'droplet' },
-    { label: 'صامت', value: 'mute' },
-  ];
-
-  const goalOptions = [100, 300, 500, 1000, 3000, 5000];
-  const autoSpeeds = [
-    { label: 'سريع (١.٥ ثانية)', value: 1500 },
-    { label: 'معتدل (٢.٥ ثانية)', value: 2500 },
-    { label: 'متأنٍّ (٤ ثوانٍ)', value: 4000 },
-  ];
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-150">
-      <div className="w-full max-w-lg rounded-3xl border border-slate-800 bg-slate-900 shadow-2xl overflow-hidden max-h-[90vh] flex flex-col text-right">
-        
-        {/* Header */}
-        <div className="flex items-center justify-between p-5 border-b border-slate-800">
-          <button
-            onClick={onClose}
-            className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
-          >
-            <X className="h-5 w-5" />
-          </button>
-          <h2 className="font-amiri text-2xl font-bold text-emerald-400">
-            إعدادات المسبحة والتخصيص
+    <div
+      className="pwa-modal-backdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="settings-modal-title"
+      onClick={onClose}
+    >
+      <div className="pwa-modal settings-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="settings-modal-header">
+          <h2 id="settings-modal-title" className="pwa-modal-title">
+            الإعدادات والمعلومات
           </h2>
-        </div>
-
-        {/* Scrollable Body */}
-        <div className="overflow-y-auto p-5 space-y-6">
-          
-          {/* Sound & Tone */}
-          <div>
-            <label className="flex items-center gap-2 text-sm font-semibold text-slate-200 mb-3">
-              <Volume2 className="h-4 w-4 text-emerald-400" />
-              <span>صوت نقرة التسبيح</span>
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              {soundOptions.map((opt) => (
-                <button
-                  key={opt.value}
-                  onClick={() => {
-                    setSettings((prev) => ({ ...prev, soundType: opt.value }));
-                    testSound(opt.value);
-                  }}
-                  className={`p-3 text-xs font-semibold rounded-xl border transition-all text-right flex items-center justify-between ${
-                    settings.soundType === opt.value
-                      ? 'border-emerald-500 bg-emerald-950/30 text-emerald-300'
-                      : 'border-slate-800 bg-slate-950/50 text-slate-400 hover:border-slate-700'
-                  }`}
-                >
-                  <span>{opt.label}</span>
-                  {opt.value !== 'mute' && (
-                    <span className="text-[10px] text-slate-400 bg-slate-800 px-1.5 py-0.5 rounded">
-                      تجربة
-                    </span>
-                  )}
-                </button>
-              ))}
-            </div>
-
-            {/* Volume */}
-            {settings.soundType !== 'mute' && (
-              <div className="mt-3 flex items-center gap-3 bg-slate-950/50 p-3 rounded-xl border border-slate-800">
-                <span className="text-xs text-slate-400 whitespace-nowrap">مستوى الصوت:</span>
-                <input
-                  type="range"
-                  min="0.1"
-                  max="1"
-                  step="0.05"
-                  value={settings.soundVolume}
-                  onChange={(e) =>
-                    setSettings((prev) => ({
-                      ...prev,
-                      soundVolume: parseFloat(e.target.value),
-                    }))
-                  }
-                  className="w-full accent-emerald-500"
-                />
-                <span className="text-xs tabular-numbers text-emerald-400">
-                  {Math.round(settings.soundVolume * 100)}%
-                </span>
-              </div>
-            )}
-          </div>
-
-          {/* Vibration / Haptics */}
-          <div>
-            <label className="flex items-center justify-between text-sm font-semibold text-slate-200 cursor-pointer">
-              <div className="flex items-center gap-2">
-                <Smartphone className="h-4 w-4 text-emerald-400" />
-                <span>الاهتزاز اللمسي (للهواتف)</span>
-              </div>
-              <input
-                type="checkbox"
-                checked={settings.vibration}
-                onChange={(e) =>
-                  setSettings((prev) => ({ ...prev, vibration: e.target.checked }))
-                }
-                className="w-5 h-5 accent-emerald-500 rounded"
-              />
-            </label>
-            <p className="text-[11px] text-slate-400 mt-1">
-              اهتزاز خفيف مع كل استغفار واهتزاز مميز عند اكتمال الجولة.
-            </p>
-          </div>
-
-          {/* Number system */}
-          <div>
-            <label className="flex items-center justify-between text-sm font-semibold text-slate-200 cursor-pointer">
-              <div className="flex items-center gap-2">
-                <Hash className="h-4 w-4 text-emerald-400" />
-                <span>الأرقام العربية المشرقية (٠، ١، ٢، ٣)</span>
-              </div>
-              <input
-                type="checkbox"
-                checked={settings.useArabicDigits}
-                onChange={(e) =>
-                  setSettings((prev) => ({
-                    ...prev,
-                    useArabicDigits: e.target.checked,
-                  }))
-                }
-                className="w-5 h-5 accent-emerald-500 rounded"
-              />
-            </label>
-          </div>
-
-          {/* Tap anywhere */}
-          <div>
-            <label className="flex items-center justify-between text-sm font-semibold text-slate-200 cursor-pointer">
-              <div className="flex items-center gap-2">
-                <Zap className="h-4 w-4 text-emerald-400" />
-                <span>وضع النقر على كامل الشاشة</span>
-              </div>
-              <input
-                type="checkbox"
-                checked={settings.tapAnywhere}
-                onChange={(e) =>
-                  setSettings((prev) => ({
-                    ...prev,
-                    tapAnywhere: e.target.checked,
-                  }))
-                }
-                className="w-5 h-5 accent-emerald-500 rounded"
-              />
-            </label>
-            <p className="text-[11px] text-slate-400 mt-1">
-              يتيح لك الاستغفار بمجرد النقر في أي مكان في الشاشة لسهولة الذكر أثناء المشي أو الاسترخاء.
-            </p>
-          </div>
-
-          {/* Daily Goal */}
-          <div>
-            <label className="flex items-center gap-2 text-sm font-semibold text-slate-200 mb-2">
-              <Target className="h-4 w-4 text-emerald-400" />
-              <span>الهدف اليومي للاستغفار</span>
-            </label>
-            <div className="grid grid-cols-3 gap-2">
-              {goalOptions.map((goal) => (
-                <button
-                  key={goal}
-                  onClick={() =>
-                    setSettings((prev) => ({ ...prev, dailyGoal: goal }))
-                  }
-                  className={`py-2 px-3 text-xs font-semibold rounded-xl border transition-all ${
-                    settings.dailyGoal === goal
-                      ? 'border-emerald-500 bg-emerald-950/30 text-emerald-300'
-                      : 'border-slate-800 bg-slate-950/50 text-slate-400 hover:border-slate-700'
-                  }`}
-                >
-                  {goal.toLocaleString('ar-SA')} مرة
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Auto Speed */}
-          <div>
-            <label className="text-sm font-semibold text-slate-200 mb-2 block">
-              سرعة الاستغفار التلقائي
-            </label>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-              {autoSpeeds.map((spd) => (
-                <button
-                  key={spd.value}
-                  onClick={() =>
-                    setSettings((prev) => ({ ...prev, autoSpeed: spd.value }))
-                  }
-                  className={`py-2 px-2 text-xs font-medium rounded-xl border transition-all ${
-                    settings.autoSpeed === spd.value
-                      ? 'border-emerald-500 bg-emerald-950/30 text-emerald-300'
-                      : 'border-slate-800 bg-slate-950/50 text-slate-400 hover:border-slate-700'
-                  }`}
-                >
-                  {spd.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Theme Palette */}
-          <div>
-            <label className="flex items-center gap-2 text-sm font-semibold text-slate-200 mb-2">
-              <Palette className="h-4 w-4 text-emerald-400" />
-              <span>مظهر التطبيق</span>
-            </label>
-            <div className="grid grid-cols-3 gap-2">
-              <button
-                onClick={() =>
-                  setSettings((prev) => ({ ...prev, theme: 'dark-emerald' }))
-                }
-                className={`py-2.5 px-2 text-xs font-semibold rounded-xl border transition-all ${
-                  settings.theme === 'dark-emerald'
-                    ? 'border-emerald-500 bg-emerald-950/40 text-emerald-300'
-                    : 'border-slate-800 bg-slate-950/50 text-slate-400'
-                }`}
-              >
-                زمردي ليلي
-              </button>
-              <button
-                onClick={() =>
-                  setSettings((prev) => ({ ...prev, theme: 'dark-slate' }))
-                }
-                className={`py-2.5 px-2 text-xs font-semibold rounded-xl border transition-all ${
-                  settings.theme === 'dark-slate'
-                    ? 'border-slate-400 bg-slate-800 text-slate-100'
-                    : 'border-slate-800 bg-slate-950/50 text-slate-400'
-                }`}
-              >
-                رمادي داكن
-              </button>
-              <button
-                onClick={() =>
-                  setSettings((prev) => ({ ...prev, theme: 'light-warm' }))
-                }
-                className={`py-2.5 px-2 text-xs font-semibold rounded-xl border transition-all ${
-                  settings.theme === 'light-warm'
-                    ? 'border-amber-400 bg-amber-950/30 text-amber-300'
-                    : 'border-slate-800 bg-slate-950/50 text-slate-400'
-                }`}
-              >
-                نهاري هادئ
-              </button>
-            </div>
-          </div>
-
-          {/* Quick reset today */}
-          <div className="pt-2 border-t border-slate-800">
-            <button
-              onClick={() => {
-                if (window.confirm('هل تريد تصفير عداد اليوم فقط؟ لن تتأثر الجولات السابقة.')) {
-                  onResetToday();
-                  onClose();
-                }
-              }}
-              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-slate-800 bg-slate-950/60 text-xs font-semibold text-slate-400 hover:text-rose-400 hover:border-rose-900/50 transition-colors"
-            >
-              <Trash2 className="h-4 w-4" />
-              <span>تصفير استغفار اليوم</span>
-            </button>
-          </div>
-
-        </div>
-
-        {/* Footer */}
-        <div className="p-4 border-t border-slate-800 bg-slate-950/60 flex justify-end">
           <button
+            type="button"
+            className="settings-close-btn"
             onClick={onClose}
-            className="px-6 py-2.5 rounded-xl bg-emerald-600 text-xs font-bold text-white hover:bg-emerald-500 transition-colors"
+            aria-label="إغلاق نافذة الإعدادات"
           >
-            تم الحفظ
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
           </button>
         </div>
 
+        <div className="settings-modal-body">
+          {/* قسم تثبيت التطبيق */}
+          <section className="settings-section" aria-labelledby="install-section-title">
+            <h3 id="install-section-title" className="settings-section-title">
+              تثبيت التطبيق
+            </h3>
+
+            {isInstallable && !isInstalled && (
+              <button
+                type="button"
+                className="settings-install-cta"
+                onClick={async () => {
+                  const ok = await onInstall();
+                  if (ok) onClose();
+                }}
+              >
+                <svg className="settings-cta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="7 10 12 15 17 10" />
+                  <line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
+                <span>تثبيت التطبيق الآن</span>
+              </button>
+            )}
+
+            {isInstalled && (
+              <p className="settings-installed-note">
+                التطبيق مثبّت بالفعل على جهازك ويعمل دون إنترنت.
+              </p>
+            )}
+
+            <div className="install-guide-list">
+              <div className="install-guide-item">
+                <span className="install-guide-os">آيفون (سفاري Safari)</span>
+                <p className="install-guide-text">
+                  افتح الرابط في متصفح <strong>Safari</strong>، اضغط زر <strong>المشاركة</strong> (مربع بسهم للأعلى) في الشريط السفلي، ثم اختر <strong>«إضافة إلى الصفحة الرئيسية»</strong> واضغط <strong>إضافة</strong>.
+                </p>
+              </div>
+              <div className="install-guide-item">
+                <span className="install-guide-os">أندرويد (كروم Chrome)</span>
+                <p className="install-guide-text">
+                  اضغط زر التثبيت المباشر عند ظهوره، أو افتح قائمة المتصفح (<strong>⋮</strong>) في الأعلى واختر <strong>«تثبيت التطبيق»</strong> أو <strong>«الإضافة إلى الشاشة الرئيسية»</strong>.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <hr className="settings-divider" />
+
+          {/* قسم التواصل مع المطوّر */}
+          <section className="settings-section" aria-labelledby="contact-section-title">
+            <h3 id="contact-section-title" className="settings-section-title">
+              التواصل مع المطوّر
+            </h3>
+            <p className="settings-section-desc">
+              للملاحظات والاقتراحات والاستفسارات أو طلب تطبيقك الخاص.
+            </p>
+            <a
+              href="https://t.me/salehapp"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="telegram-link"
+            >
+              <span className="telegram-icon-wrap" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                  <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z" />
+                </svg>
+              </span>
+              <span className="telegram-link-meta">
+                <span className="telegram-link-label">تيليجرام</span>
+                <span className="telegram-link-handle" dir="ltr">@salehapp</span>
+              </span>
+              <svg className="telegram-external-arrow" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M7 17L17 7" />
+                <path d="M7 7h10v10" />
+              </svg>
+            </a>
+          </section>
+
+          <hr className="settings-divider" />
+
+          {/* قسم إخلاء المسؤولية */}
+          <section className="settings-section" aria-labelledby="disclaimer-section-title">
+            <h3 id="disclaimer-section-title" className="settings-section-title">
+              إخلاء المسؤولية
+            </h3>
+            <p className="disclaimer-text">
+              تطبيق «مسبحة الاستغفار الذكية» أداة مساعدة مجانية مخصّصة للتذكير بالاستغفار ومتابعة الأوراد اليومية. تُحفظ جميع الإحصائيات والعدادات وتفضيلات المظهر محلياً على جهازك فقط عبر ذاكرة المتصفح، ولا يتم جمع أو إرسال أي بيانات شخصية إلى خوادم خارجية. الآيات القرآنية المعروضة مستمدة من المصحف الشريف، وفي حال ملاحظة أي خطأ غير مقصود يُرجى إبلاغنا عبر تيليجرام لتصحيحه فوراً.
+            </p>
+          </section>
+        </div>
       </div>
     </div>
   );

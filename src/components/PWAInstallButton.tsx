@@ -1,8 +1,20 @@
-import React, { useState } from 'react';
-import { usePWAInstall } from '../hooks/usePWAInstall';
+import React, { useEffect, useState } from 'react';
 
-export const PWAInstallButton: React.FC = () => {
-  const { isInstallable, isInstalled, isIOS, isAndroid, install } = usePWAInstall();
+interface PWAInstallButtonProps {
+  isInstallable: boolean;
+  isInstalled: boolean;
+  isIOS: boolean;
+  isAndroid: boolean;
+  onInstall: () => Promise<boolean>;
+}
+
+export const PWAInstallButton: React.FC<PWAInstallButtonProps> = ({
+  isInstallable,
+  isInstalled,
+  isIOS,
+  isAndroid,
+  onInstall,
+}) => {
   const [showIOSGuide, setShowIOSGuide] = useState(false);
   const [showAndroidGuide, setShowAndroidGuide] = useState(false);
   const [hintDismissed, setHintDismissed] = useState(() => {
@@ -12,6 +24,18 @@ export const PWAInstallButton: React.FC = () => {
       return false;
     }
   });
+
+  useEffect(() => {
+    if (!showIOSGuide && !showAndroidGuide) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setShowIOSGuide(false);
+        setShowAndroidGuide(false);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [showIOSGuide, showAndroidGuide]);
 
   if (isInstalled) {
     return null;
@@ -26,12 +50,11 @@ export const PWAInstallButton: React.FC = () => {
     }
   };
 
-  // Chromium / Android native install prompt
   if (isInstallable) {
     return (
       <button
         type="button"
-        onClick={install}
+        onClick={onInstall}
         className="install-btn"
         aria-label="تثبيت التطبيق على الجهاز"
       >
@@ -45,7 +68,6 @@ export const PWAInstallButton: React.FC = () => {
     );
   }
 
-  // iOS Safari hint + guided modal
   if (isIOS) {
     return (
       <>
@@ -126,7 +148,6 @@ export const PWAInstallButton: React.FC = () => {
     );
   }
 
-  // Fallback for Android browsers where beforeinstallprompt is unavailable (e.g. in-app webviews)
   if (isAndroid) {
     return (
       <>

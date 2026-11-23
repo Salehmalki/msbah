@@ -1,9 +1,12 @@
-import {createRoot} from 'react-dom/client';
-import {registerSW} from 'virtual:pwa-register';
+import { createRoot } from 'react-dom/client';
+import { registerSW } from 'virtual:pwa-register';
 import App from './App.tsx';
+import { applyThemeToDocument, getInitialTheme } from './hooks/useTheme.ts';
 import './index.css';
 
 declare const __APP_CACHE_VERSION__: string;
+
+applyThemeToDocument(getInitialTheme());
 
 registerSW({
   immediate: true,
@@ -15,7 +18,6 @@ registerSW({
   },
   onRegisteredSW(_swUrl, registration) {
     if (registration) {
-      // Periodically check for newly deployed versions (e.g. every 30 minutes)
       setInterval(() => {
         registration.update().catch(() => {});
       }, 30 * 60 * 1000);

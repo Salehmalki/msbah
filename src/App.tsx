@@ -2,6 +2,9 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { playBeadSound, triggerHaptic } from './utils/audio';
 import { PWAInstallButton } from './components/PWAInstallButton';
 import { OfflineIndicator } from './components/OfflineIndicator';
+import { SettingsModal } from './components/SettingsModal';
+import { useTheme } from './hooks/useTheme';
+import { usePWAInstall } from './hooks/usePWAInstall';
 
 interface StateData {
   target: number;
@@ -83,6 +86,10 @@ export default function App() {
     }
     return fallback;
   });
+
+  const { isDark, toggleTheme } = useTheme();
+  const pwaInstall = usePWAInstall();
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const [taps, setTaps] = useState(0);
   const [offset, setOffset] = useState(0);
@@ -175,11 +182,12 @@ export default function App() {
 
     const drawFrame = (ms: number) => {
       const t = ms / 1000;
+      const darkActive = document.documentElement.classList.contains('dark');
       ctx.clearRect(0, 0, W, H);
       ctx.globalCompositeOperation = 'source-over';
 
-      const fade = 1 - 0.75 * curPRef.current;
-      ctx.fillStyle = '#ecfdf5';
+      const fade = (1 - 0.75 * curPRef.current) * (darkActive ? 1 : 0.35);
+      ctx.fillStyle = darkActive ? '#ecfdf5' : '#059669';
 
       for (let i = 0; i < starsRef.current.length; i++) {
         const s = starsRef.current[i];
@@ -192,7 +200,7 @@ export default function App() {
 
       const parts = partsRef.current;
       if (parts.length > 0) {
-        ctx.globalCompositeOperation = 'lighter';
+        ctx.globalCompositeOperation = darkActive ? 'lighter' : 'source-over';
         for (let j = parts.length - 1; j >= 0; j--) {
           const q = parts[j];
           q.l++;
@@ -384,15 +392,23 @@ export default function App() {
   // Keyboard shortcut listener (Space or Enter)
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if (settingsOpen) return;
       if (e.code === 'Space' || e.code === 'Enter') {
-        if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+        if (
+          e.target instanceof HTMLInputElement ||
+          e.target instanceof HTMLTextAreaElement ||
+          e.target instanceof HTMLButtonElement ||
+          e.target instanceof HTMLAnchorElement
+        ) {
+          return;
+        }
         e.preventDefault();
         handleTap();
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, []);
+  }, [settingsOpen]);
 
   // Compute stage
   const stageIndex = (Math.floor(taps / 11) + offset) % STAGES.length;
@@ -529,13 +545,52 @@ export default function App() {
           <span className="moon" aria-hidden="true" />
         </div>
         <div className="date">{hijriDate}</div>
-        <button
-          onClick={handleReset}
-          className={`ghost ${isArmed ? 'armed' : ''}`}
-          type="button"
-        >
-          {isArmed ? 'اضغط للتأكيد' : 'تصفير'}
-        </button>
+        <div className="top-actions">
+          <button
+            onClick={handleReset}
+            className={`ghost ${isArmed ? 'armed' : ''}`}
+            type="button"
+          >
+            {isArmed ? 'تأكيد؟' : 'تصفير'}
+          </button>
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className="icon-btn"
+            aria-label={isDark ? 'التبديل إلى الوضع الفاتح' : 'التبديل إلى الوضع الداكن'}
+            title={isDark ? 'الوضع الفاتح' : 'الوضع الداكن'}
+          >
+            {isDark ? (
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="4" />
+                <path d="M12 2v2" />
+                <path d="M12 20v2" />
+                <path d="m4.93 4.93 1.41 1.41" />
+                <path d="m17.66 17.66 1.41 1.41" />
+                <path d="M2 12h2" />
+                <path d="M20 12h2" />
+                <path d="m6.34 17.66-1.41 1.41" />
+                <path d="m19.07 4.93-1.41 1.41" />
+              </svg>
+            ) : (
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+              </svg>
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={() => setSettingsOpen(true)}
+            className="icon-btn"
+            aria-label="الإعدادات والمعلومات"
+            title="الإعدادات والمعلومات"
+          >
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="3" />
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1Z" />
+            </svg>
+          </button>
+        </div>
       </header>
 
       {/* Quranic Verse Section */}
@@ -682,7 +737,13 @@ export default function App() {
 
         {/* Install & Share Actions */}
         <div className="dock-actions">
-          <PWAInstallButton />
+          <PWAInstallButton
+            isInstallable={pwaInstall.isInstallable}
+            isInstalled={pwaInstall.isInstalled}
+            isIOS={pwaInstall.isIOS}
+            isAndroid={pwaInstall.isAndroid}
+            onInstall={pwaInstall.install}
+          />
           <button onClick={handleShare} className="share" type="button">
             {shareTextMsg}
           </button>
@@ -696,6 +757,14 @@ export default function App() {
           aria-label="نص المشاركة"
         />
       </section>
+
+      <SettingsModal
+        isOpen={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        isInstallable={pwaInstall.isInstallable}
+        isInstalled={pwaInstall.isInstalled}
+        onInstall={pwaInstall.install}
+      />
 
       <OfflineIndicator />
     </div>
