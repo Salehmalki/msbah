@@ -36,6 +36,8 @@ jobs:
         run: npm install
 
       - name: Build
+        env:
+          VITE_CACHE_VERSION: v${{ github.run_number }}-${{ github.sha }}
         run: npm run build
 
       - name: Setup Pages

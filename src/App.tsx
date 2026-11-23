@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { playBeadSound, triggerHaptic } from './utils/audio';
+import { PWAInstallButton } from './components/PWAInstallButton';
+import { OfflineIndicator } from './components/OfflineIndicator';
 
 interface StateData {
   target: number;
@@ -23,6 +25,22 @@ function fa(n: number): string {
 function dayKey(): string {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function getHijriDate(): string {
+  try {
+    return new Intl.DateTimeFormat('ar-SA-u-ca-islamic-umalqura', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    }).format(new Date());
+  } catch {
+    try {
+      return new Intl.DateTimeFormat('ar', { dateStyle: 'long' }).format(new Date());
+    } catch {
+      return '';
+    }
+  }
 }
 
 const STAGES = [
@@ -76,7 +94,7 @@ export default function App() {
   const [skyFlash, setSkyFlash] = useState(false);
   const [verseSwap, setVerseSwap] = useState(false);
   const [shareTextMsg, setShareTextMsg] = useState('مشاركة التطبيق');
-  const [hijriDate, setHijriDate] = useState('');
+  const [hijriDate] = useState<string>(getHijriDate);
 
   const appRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
@@ -103,24 +121,6 @@ export default function App() {
       // ignore
     }
   }, [data]);
-
-  // Hijri Date
-  useEffect(() => {
-    try {
-      const formatted = new Intl.DateTimeFormat('ar-SA-u-ca-islamic-umalqura', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-      }).format(new Date());
-      setHijriDate(formatted);
-    } catch {
-      try {
-        setHijriDate(new Intl.DateTimeFormat('ar', { dateStyle: 'long' }).format(new Date()));
-      } catch {
-        setHijriDate('');
-      }
-    }
-  }, []);
 
   // Screen Wake Lock
   const lockWakeLock = useCallback(() => {
@@ -161,7 +161,7 @@ export default function App() {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
       if (!starsRef.current.length) {
-        for (let i = 0; i < 80; i++) {
+        for (let i = 0; i < 48; i++) {
           starsRef.current.push({
             x: Math.random(),
             y: Math.random() * 0.72,
@@ -173,18 +173,13 @@ export default function App() {
       }
     };
 
-    resize();
-    window.addEventListener('resize', resize);
-
-    let animId: number;
-    const loop = (ms: number) => {
+    const drawFrame = (ms: number) => {
       const t = ms / 1000;
       ctx.clearRect(0, 0, W, H);
       ctx.globalCompositeOperation = 'source-over';
 
       const fade = 1 - 0.75 * curPRef.current;
-      const STAR_COLOR = '#ecfdf5';
-      ctx.fillStyle = STAR_COLOR;
+      ctx.fillStyle = '#ecfdf5';
 
       for (let i = 0; i < starsRef.current.length; i++) {
         const s = starsRef.current[i];
@@ -195,36 +190,60 @@ export default function App() {
         ctx.fill();
       }
 
-      ctx.globalCompositeOperation = 'lighter';
       const parts = partsRef.current;
-      for (let j = parts.length - 1; j >= 0; j--) {
-        const q = parts[j];
-        q.l++;
-        if (q.l > q.m) {
-          parts.splice(j, 1);
-          continue;
+      if (parts.length > 0) {
+        ctx.globalCompositeOperation = 'lighter';
+        for (let j = parts.length - 1; j >= 0; j--) {
+          const q = parts[j];
+          q.l++;
+          if (q.l > q.m) {
+            parts.splice(j, 1);
+            continue;
+          }
+          q.x += q.vx;
+          q.y += q.vy;
+          q.vx *= 0.97;
+          q.vy = q.vy * 0.97 - 0.02;
+          ctx.globalAlpha = Math.max(0, 1 - q.l / q.m) * 0.9;
+          ctx.fillStyle = q.c;
+          ctx.beginPath();
+          ctx.arc(q.x, q.y, q.r, 0, 6.2832);
+          ctx.fill();
         }
-        q.x += q.vx;
-        q.y += q.vy;
-        q.vx *= 0.97;
-        q.vy = q.vy * 0.97 - 0.02;
-        ctx.globalAlpha = Math.max(0, 1 - q.l / q.m) * 0.9;
-        ctx.fillStyle = q.c;
-        ctx.beginPath();
-        ctx.arc(q.x, q.y, q.r, 0, 6.2832);
-        ctx.fill();
       }
 
       ctx.globalAlpha = 1;
       ctx.globalCompositeOperation = 'source-over';
+    };
 
+    resize();
+    drawFrame(performance.now());
+    window.addEventListener('resize', resize);
+
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let animId = 0;
+    let lastDraw = 0;
+    let startTimer = 0;
+
+    const loop = (ms: number) => {
+      const hasParticles = partsRef.current.length > 0;
+      // Run 60fps during particle bursts; throttle calm starfield twinkle to ~12fps
+      if (hasParticles || ms - lastDraw >= 80) {
+        lastDraw = ms;
+        drawFrame(ms);
+      }
       animId = requestAnimationFrame(loop);
     };
 
-    animId = requestAnimationFrame(loop);
+    if (!reducedMotion) {
+      startTimer = window.setTimeout(() => {
+        animId = requestAnimationFrame(loop);
+      }, 300);
+    }
 
     return () => {
-      cancelAnimationFrame(animId);
+      clearTimeout(startTimer);
+      if (animId) cancelAnimationFrame(animId);
       window.removeEventListener('resize', resize);
     };
   }, []);
@@ -597,7 +616,6 @@ export default function App() {
           <button
             ref={btnRef}
             type="button"
-            aria-label={`أستغفر الله، العدد ${fa(shownCount)} من ${fa(data.target)}`}
             onPointerDown={(e) => {
               if (e.button > 0) return;
               e.preventDefault();
@@ -662,10 +680,13 @@ export default function App() {
           </div>
         </div>
 
-        {/* Share Button */}
-        <button onClick={handleShare} className="share" type="button">
-          {shareTextMsg}
-        </button>
+        {/* Install & Share Actions */}
+        <div className="dock-actions">
+          <PWAInstallButton />
+          <button onClick={handleShare} className="share" type="button">
+            {shareTextMsg}
+          </button>
+        </div>
         <textarea
           ref={shareboxRef}
           className="sharebox"
@@ -675,6 +696,8 @@ export default function App() {
           aria-label="نص المشاركة"
         />
       </section>
+
+      <OfflineIndicator />
     </div>
   );
 }
